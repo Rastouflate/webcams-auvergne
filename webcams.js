@@ -12,8 +12,51 @@
 const VE = "https://s1.vision-environnement.com/live/modules/timelapse/";
 const VEP = "https://www.vision-environnement.com/live/player/";
 const TRINUM = "https://www.trinum.com/ibox/ftpcam/";
+const WINDY = (id) => `https://imgproxy.windy.com/_/full/plain/current/${id}/original.jpg?v=2`;
+const CD63 = "https://departement63.fr/webcams/";
+const WEBVIA = (t) => `https://ncs1.webvia.fr/ncs_cd63/getSharedVideo.do?token=${t}&file=thumbnail`;
+const CD63_SITE = "https://www.puy-de-dome.fr/routes-deplacements/webcam.html";
 
 window.WEBCAMS_TOURISME = [
+  // --- Aurillac ---
+  { nom: "Aurillac – Place des Carmes (direct vidéo)", lieu: "Aurillac", lat: 44.9270, lon: 2.4440,
+    player: "https://pv.viewsurf.com/2778/Aurillac-Place-des-Carmes",
+    site: "https://pv.viewsurf.com/2778/Aurillac-Place-des-Carmes" },
+  { nom: "Aurillac – Vue sur le Puy Courny", lieu: "Aurillac", lat: 44.9167, lon: 2.4336,
+    image: "https://www.webcam-aurillac.fr/latest.jpg",
+    site: "https://www.webcam-aurillac.fr/" },
+
+  // --- Webcams référencées sur Windy (heure de mise à jour fiable) ---
+  { nom: "Gorges de la Truyère", lieu: "Lacroix-Barrez", lat: 44.74, lon: 2.63,
+    image: WINDY(1793919143), corsGet: true, site: "https://www.windy.com/webcams/1793919143" },
+  { nom: "Laguiole – Station de ski", lieu: "Laguiole", lat: 44.67, lon: 2.93,
+    image: WINDY(1608810000), corsGet: true, site: "https://www.windy.com/webcams/1608810000" },
+  { nom: "Ussel – Aérodrome de Thalamy", lieu: "Saint-Exupéry-les-Roches", lat: 45.54, lon: 2.42,
+    image: WINDY(1603703110), corsGet: true, site: "https://www.windy.com/webcams/1603703110" },
+  { nom: "Col de Guéry", lieu: "Orcival", lat: 45.62, lon: 2.82,
+    image: WINDY(1449163850), corsGet: true, site: "https://www.windy.com/webcams/1449163850" },
+
+  // --- Routes du Puy-de-Dôme (Conseil départemental) ---
+  { nom: "Col de la Moreno (D942)", lieu: "Saint-Genès-Champanelle", lat: 45.7417, lon: 2.9501, image: CD63 + "CAM2.jpg", site: CD63_SITE },
+  { nom: "Entrée de Pontgibaud (D941)", lieu: "Saint-Ours-les-Roches", lat: 45.8349, lon: 2.8645, image: CD63 + "CAM3.jpg", site: CD63_SITE },
+  { nom: "Col des Pradeaux (D996)", lieu: "Grandrif", lat: 45.5271, lon: 3.8424, image: CD63 + "CAM4.jpg", site: CD63_SITE },
+  { nom: "Côte de Buges (D2089)", lieu: "Perpezat", lat: 45.6708, lon: 2.7874, image: CD63 + "CAM5.jpg", site: CD63_SITE },
+  { nom: "Col de Toutée (D996)", lieu: "Cunlhat", lat: 45.5979, lon: 3.5814, image: CD63 + "CAM6.jpg", site: CD63_SITE },
+  { nom: "Pont de Ladoux (D2009)", lieu: "Cébazat", lat: 45.8432, lon: 3.1138, image: CD63 + "CAM8.jpg", site: CD63_SITE },
+  { nom: "Côte de Train (RD983)", lieu: "Orcival", lat: 45.6388, lon: 2.8308, image: WEBVIA("7fda02c9b61bf4ca"), site: CD63_SITE },
+  { nom: "Col du Béal (RD40)", lieu: "Saint-Pierre-la-Bourlhonne", lat: 45.6847, lon: 3.7825, image: WEBVIA("beed8ed1f89454c7"), site: CD63_SITE },
+  { nom: "Col de la Croix-Morand (D996)", lieu: "Chambon-sur-Lac", lat: 45.5972, lon: 2.8507, image: WEBVIA("42a6242e14ba0410"), site: CD63_SITE },
+  { nom: "Col de la Dételée (D999)", lieu: "Saint-Germain-l'Herm", lat: 45.4625, lon: 3.5365, image: CD63 + "CAM9.jpg", site: CD63_SITE },
+  { nom: "Le Pas du Pire (D2089)", lieu: "Chabreloche", lat: 45.8772, lon: 3.6809, image: CD63 + "CAM10.jpg", site: CD63_SITE },
+  { nom: "Le Vauriat (D943)", lieu: "Saint-Ours-les-Roches", lat: 45.8588, lon: 2.9272, image: CD63 + "CAM11.jpg", site: CD63_SITE },
+  { nom: "Méjanesse (D922)", lieu: "Saint-Sauves-d'Auvergne", lat: 45.5921, lon: 2.6547, image: CD63 + "CAM12.jpg", site: CD63_SITE },
+  { nom: "Col de la Ventouse (D2089)", lieu: "Aydat", lat: 45.6822, lon: 2.9659, image: CD63 + "CAM13.jpg", site: CD63_SITE },
+  { nom: "La Baraque Brûlée (D2144)", lieu: "Menat", lat: 46.1305, lon: 2.8663, image: CD63 + "CAM7.jpg", site: CD63_SITE },
+  { nom: "Dore-l'Église (D202)", lieu: "Dore-l'Église", lat: 45.3778, lon: 3.7635, image: WEBVIA("ba2bd79dd44b1f1f"), site: CD63_SITE },
+  { nom: "Pont de Clamouze", lieu: "Besse-et-Saint-Anastaise", lat: 45.4722, lon: 2.8445, image: WEBVIA("ce531ffecacecd0a"), site: CD63_SITE },
+  { nom: "Accès à Super-Besse (D149)", lieu: "Besse-et-Saint-Anastaise", lat: 45.5015, lon: 2.8712, image: WEBVIA("3e2088f7178c24eb"), site: CD63_SITE },
+  { nom: "Pérignat-sur-Allier – Cournon", lieu: "Pérignat-sur-Allier", lat: 45.7299, lon: 3.2273, image: WEBVIA("5396433062aaaf62"), site: CD63_SITE },
+
   // --- Clermont / Chaîne des Puys ---
   { nom: "Clermont-Ferrand – Panorama", lieu: "Clermont-Ferrand", lat: 45.7765, lon: 3.0850,
     image: VE + "capture/clermont-ferrand.jpg", player: VEP + "player.php?id=clermont-ferrand",
@@ -29,9 +72,6 @@ window.WEBCAMS_TOURISME = [
   { nom: "Le Mont-Dore – Sommet", lieu: "Puy de Sancy", lat: 45.5300, lon: 2.8170,
     image: TRINUM + "sancy_sommet-station.jpg", cors: true,
     site: "https://www.sancy.com/decouvrir/toutes-les-communes/le-mont-dore/webcams/" },
-  { nom: "Le Mont-Dore – Vue station (direct vidéo)", lieu: "Le Mont-Dore", lat: 45.5450, lon: 2.8137,
-    youtube: "YkKGantlWH0",
-    site: "https://www.vision-environnement.com/webcam/france/auvergne-rhone-alpes/21102-skyline-france-mont-dore-le-mont-dore/" },
   { nom: "Le Mont-Dore – Village (direct vidéo)", lieu: "Le Mont-Dore", lat: 45.5760, lon: 2.8100,
     player: "https://www.youtube.com/embed/live_stream?channel=UCjGrBtlwuneaSMmi32yhrXQ&autoplay=1&mute=1&playsinline=1",
     site: "https://www.vision-environnement.com/webcam/france/auvergne-rhone-alpes/1014-montdore/" },
@@ -86,9 +126,6 @@ window.WEBCAMS_TOURISME = [
   { nom: "Le Lioran – Panorama", lieu: "Le Lioran", lat: 45.0714, lon: 2.7589,
     image: VE + "capture/lelioran.jpg", player: VEP + "player.php?id=le-lioran",
     site: "https://www.vision-environnement.com/webcam/france/auvergne-rhone-alpes/4277-le-lioran/" },
-  { nom: "Plomb du Cantal", lieu: "Le Lioran", lat: 45.0573, lon: 2.7617,
-    image: VE + "captureptz/lelioran2.jpg", player: VEP + "player.php?id=lioran2-",
-    site: "https://www.vision-environnement.com/webcam/france/auvergne-rhone-alpes/67-lioran2/" },
   { nom: "Prat de Bouc", lieu: "Albepierre-Bredons", lat: 45.0523, lon: 2.7927,
     image: VE + "capture/pratdebouc.jpg", player: VEP + "player.php?id=pratdebouc",
     site: "https://www.vision-environnement.com/webcam/france/auvergne-rhone-alpes/2334-pratdebouc/" },

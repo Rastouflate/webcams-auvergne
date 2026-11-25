@@ -128,9 +128,9 @@ function testImage(url) {
 async function computeStatus(cam) {
   if (cam.ok === false) return { cls: "offline", label: "Hors ligne", detail: "Caméra signalée hors service" };
   const media = cam.video || cam.image;
-  if (cam.cors && media) {
+  if ((cam.cors || cam.corsGet) && media) {
     try {
-      const r = await fetch(bust(media), { method: "HEAD", cache: "no-store" });
+      const r = await fetch(bust(media), { method: cam.corsGet ? "GET" : "HEAD", cache: "no-store" });
       if (!r.ok) return { cls: "offline", label: "Hors ligne", detail: "Image indisponible" };
       const lm = r.headers.get("Last-Modified");
       if (lm) {
@@ -177,6 +177,14 @@ document.getElementById("btn-layer").onclick = () => {
   LAYERS[layerIdx].layer.addTo(map);
   toast("Fond de carte : " + LAYERS[layerIdx].name);
 };
+
+// ---- Repère Aurillac -----------------------------------------------
+const AURILLAC = [44.9264, 2.4396];
+L.circle(AURILLAC, { radius: 3000, color: "#c2410c", weight: 2, fillColor: "#f97316", fillOpacity: 0.15, interactive: false }).addTo(map);
+L.marker(AURILLAC, {
+  icon: L.divIcon({ className: "city-marker", html: '<div class="city-pin">Aurillac</div>', iconSize: [96, 40], iconAnchor: [48, 40] }),
+  zIndexOffset: -1000, title: "Aurillac",
+}).on("click", e => { L.DomEvent.stopPropagation(e); map.flyTo(AURILLAC, 13); }).addTo(map);
 
 const cluster = L.markerClusterGroup({
   showCoverageOnHover: false,
