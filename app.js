@@ -455,31 +455,44 @@ function restorePin() {
   } catch (e) {}
 }
 
-// Téléphone (appui long) et clic droit : Leaflet émet "contextmenu"
-map.on("contextmenu", e => {
-  if (e.originalEvent) L.DomEvent.preventDefault(e.originalEvent);
-  placePin(e.latlng);
-});
-
-// Ordinateur : clic maintenu ~0,6 s sans bouger
-(function longMousePress() {
+// Appui long (doigt ou souris) : 0,5 s sans bouger, détecté avec les "pointer events"
+// qui fonctionnent pareil sur téléphone et ordinateur. Le clic droit marche aussi.
+let lastPinAt = 0;
+function pinAtClient(x, y) {
+  const r = map.getContainer().getBoundingClientRect();
+  lastPinAt = Date.now();
+  placePin(map.containerPointToLatLng([x - r.left, y - r.top]));
+}
+(function longPress() {
   const el = map.getContainer();
+  const pointers = new Map();
   let timer = null, start = null, fired = false;
-  el.addEventListener("mousedown", ev => {
-    if (ev.button !== 0 || ev.target.closest(".leaflet-marker-icon, .leaflet-popup, .leaflet-control")) return;
+  const cancel = () => { clearTimeout(timer); timer = null; };
+  el.addEventListener("pointerdown", ev => {
+    pointers.set(ev.pointerId, true);
+    if (pointers.size > 1) return cancel();                       // pincement (zoom) : pas de repère
+    if (ev.pointerType === "mouse" && ev.button !== 0) return;
+    if (ev.target.closest(".leaflet-marker-icon, .leaflet-popup, .leaflet-control")) return;
     start = [ev.clientX, ev.clientY]; fired = false;
-    timer = setTimeout(() => {
-      fired = true;
-      const r = el.getBoundingClientRect();
-      placePin(map.containerPointToLatLng([start[0] - r.left, start[1] - r.top]));
-    }, 600);
-  });
-  el.addEventListener("mousemove", ev => {
-    if (timer && start && Math.hypot(ev.clientX - start[0], ev.clientY - start[1]) > 6) { clearTimeout(timer); timer = null; }
-  });
-  el.addEventListener("mouseup", () => { clearTimeout(timer); timer = null; });
-  // Empêche le clic qui suit l'appui long de fermer quoi que ce soit
+    cancel();
+    timer = setTimeout(() => { timer = null; fired = true; pinAtClient(start[0], start[1]); }, 500);
+  }, true);
+  el.addEventListener("pointermove", ev => {
+    if (timer && start && Math.hypot(ev.clientX - start[0], ev.clientY - start[1]) > 10) cancel();
+  }, true);
+  const up = ev => { pointers.delete(ev.pointerId); cancel(); };
+  el.addEventListener("pointerup", up, true);
+  el.addEventListener("pointercancel", up, true);
+  el.addEventListener("pointerleave", up, true);
+  // Le clic qui suit un appui long ne doit rien fermer
   el.addEventListener("click", ev => { if (fired) { ev.stopPropagation(); fired = false; } }, true);
+  // Bloque le menu du navigateur sur la carte ; clic droit = poser le repère
+  el.addEventListener("contextmenu", ev => {
+    ev.preventDefault();
+    if (Date.now() - lastPinAt > 1500 && !ev.target.closest(".leaflet-marker-icon, .leaflet-popup, .leaflet-control")) {
+      pinAtClient(ev.clientX, ev.clientY);
+    }
+  }, true);
 })();
 
 // ---- Ma position ---------------------------------------------------
