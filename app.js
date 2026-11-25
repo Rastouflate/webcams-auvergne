@@ -349,11 +349,7 @@ function pick(it) {
   sInput.value = it.label;
   sClear.hidden = false;
   sInput.blur();
-  if (it.type === "cam") {
-    map.flyTo([it.cam.lat, it.cam.lon], 15);
-    map.once("moveend", () => openPanel(it.cam));
-    return;
-  }
+  if (it.type === "cam") { goToCam(it.cam); return; }
   closePanel();
   if (placeMarker) placeMarker.remove();
   placeMarker = L.marker([it.lat, it.lon], {
@@ -415,10 +411,27 @@ function toDMM(value, pos, neg) {
   return `${hemi} ${deg}° ${min.toFixed(3).replace(".", ",")}′`;
 }
 
+// Va vers une webcam en zoomant le moins possible : juste assez pour que sa bulle
+// sorte de son groupe (ou s'écarte si plusieurs webcams sont au même endroit).
 function goToCam(cam) {
   if (myPin) myPin.closePopup();
-  map.flyTo([cam.lat, cam.lon], 15);
-  map.once("moveend", () => openPanel(cam));
+  cluster.zoomToShowLayer(cam.marker, () => {
+    openPanel(cam);
+    // Garde la bulle visible à côté de la fiche (en haut sur téléphone, à gauche sur ordinateur)
+    const p = map.latLngToContainerPoint(cam.marker.getLatLng());
+    const size = map.getSize();
+    let dx = 0, dy = 0;
+    if (size.x < 760) {
+      const top = 150, bottom = size.y * 0.18 + 150;               // sous la barre de recherche, au-dessus de la fiche
+      if (p.y < top || p.y > bottom) dy = p.y - (top + 40);
+      if (p.x < 40 || p.x > size.x - 40) dx = p.x - size.x / 2;
+    } else {
+      const right = size.x - 440;                                  // la fiche occupe la droite
+      if (p.x > right || p.x < 40) dx = p.x - right / 2;
+      if (p.y < 140 || p.y > size.y - 60) dy = p.y - size.y / 2;
+    }
+    if (dx || dy) map.panBy([dx, dy]);
+  });
 }
 
 function pinPopup() {
@@ -465,14 +478,23 @@ function placePin(latlng, silent) {
     }).addTo(map);
     myPin.bindPopup(pinPopup, { closeButton: true, autoPan: true, maxWidth: 280,
       autoPanPaddingTopLeft: L.point(16, 140), autoPanPaddingBottomRight: L.point(16, 70) });
-    myPin.on("dragend", () => { savePin(); if (myPin.isPopupOpen()) myPin.setPopupContent(pinPopup); });
+    myPin.on("dragend", () => { savePin(); refreshPinPopup(); });
   }
   savePin();
+  refreshPinPopup();
   if (!silent) {
     if (navigator.vibrate) try { navigator.vibrate(30); } catch (e) {}
     toast("Repère placé · touchez-le pour voir les webcams proches ou le retirer");
   }
 }
+// Si la fenêtre du repère est ouverte, on recalcule coordonnées et distances tout de suite
+function refreshPinPopup() {
+  if (myPin && myPin.isPopupOpen()) {
+    myPin.setPopupContent(pinPopup);
+    myPin.getPopup().update();
+  }
+}
+
 function removePin() {
   if (!myPin) return;
   myPin.remove(); myPin = null;
@@ -500,16 +522,16 @@ function pinAtClient(x, y) {
 (function longPress() {
   const el = map.getContainer();
   const pointers = new Map();
-  let timer = null, start = null, fired = false;
+  let timer = null, start = null, firedAt = 0;
   const cancel = () => { clearTimeout(timer); timer = null; };
   el.addEventListener("pointerdown", ev => {
     pointers.set(ev.pointerId, true);
     if (pointers.size > 1) return cancel();                       // pincement (zoom) : pas de repère
     if (ev.pointerType === "mouse" && ev.button !== 0) return;
     if (ev.target.closest(".leaflet-marker-icon, .leaflet-popup, .leaflet-control")) return;
-    start = [ev.clientX, ev.clientY]; fired = false;
+    start = [ev.clientX, ev.clientY];
     cancel();
-    timer = setTimeout(() => { timer = null; fired = true; pinAtClient(start[0], start[1]); }, 500);
+    timer = setTimeout(() => { timer = null; firedAt = Date.now(); pinAtClient(start[0], start[1]); }, 500);
   }, true);
   el.addEventListener("pointermove", ev => {
     if (timer && start && Math.hypot(ev.clientX - start[0], ev.clientY - start[1]) > 10) cancel();
@@ -518,8 +540,12 @@ function pinAtClient(x, y) {
   el.addEventListener("pointerup", up, true);
   el.addEventListener("pointercancel", up, true);
   el.addEventListener("pointerleave", up, true);
-  // Le clic qui suit un appui long ne doit rien fermer
-  el.addEventListener("click", ev => { if (fired) { ev.stopPropagation(); fired = false; } }, true);
+  // Le clic émis au relâchement d'un appui long ne doit rien fermer.
+  // On ne bloque que ce clic-là (dans les secondes qui suivent), jamais les suivants.
+  el.addEventListener("click", ev => {
+    if (firedAt && Date.now() - firedAt < 3000 && !ev.target.closest(".leaflet-popup")) ev.stopPropagation();
+    firedAt = 0;
+  }, true);
   // Bloque le menu du navigateur sur la carte ; clic droit = poser le repère
   el.addEventListener("contextmenu", ev => {
     ev.preventDefault();
