@@ -405,21 +405,54 @@ L.DomEvent.disableClickPropagation(document.getElementById("search"));
 let myPin = null;
 const PIN_KEY = "webcams-auvergne-repere";
 
-function nearestText(latlng) {
-  const list = allCams.map(c => ({ c, d: haversineKm([latlng.lat, latlng.lng], [c.lat, c.lon]) }))
-    .sort((a, b) => a.d - b.d);
-  const n10 = list.filter(x => x.d <= 10).length;
-  const near = list[0];
-  if (!near) return "";
-  return `Webcam la plus proche : <b>${esc(near.c.nom)}</b> (${near.d.toFixed(1)} km)<br>${n10} webcam${n10 > 1 ? "s" : ""} à moins de 10 km`;
+// Coordonnées en degrés et minutes décimales (ex. N 45° 17,141′)
+function toDMM(value, pos, neg) {
+  const hemi = value >= 0 ? pos : neg;
+  const a = Math.abs(value);
+  let deg = Math.floor(a);
+  let min = (a - deg) * 60;
+  if (min >= 59.9995) { deg += 1; min = 0; }
+  return `${hemi} ${deg}° ${min.toFixed(3).replace(".", ",")}′`;
+}
+
+function goToCam(cam) {
+  if (myPin) myPin.closePopup();
+  map.flyTo([cam.lat, cam.lon], 15);
+  map.once("moveend", () => openPanel(cam));
 }
 
 function pinPopup() {
+  const p = myPin.getLatLng();
+  const list = allCams.map(c => ({ c, d: haversineKm([p.lat, p.lng], [c.lat, c.lon]) }))
+    .sort((a, b) => a.d - b.d).slice(0, 3);
+  const dmm = `${toDMM(p.lat, "N", "S")}  ${toDMM(p.lng, "E", "O")}`;
+  const dec = `${p.lat.toFixed(5)}, ${p.lng.toFixed(5)}`;
   const div = document.createElement("div");
   div.className = "pin-popup";
-  div.innerHTML = `<strong>Mon repère</strong><p>${nearestText(myPin.getLatLng())}</p>
-    <button type="button" class="btn">Retirer le repère</button>`;
-  div.querySelector("button").onclick = removePin;
+  div.innerHTML = `<strong>Mon repère</strong>
+    <div class="pin-coords">
+      <span class="pin-dmm">${toDMM(p.lat, "N", "S")}<br>${toDMM(p.lng, "E", "O")}</span>
+      <span class="pin-dec">${dec}</span>
+      <button type="button" class="pin-copy">Copier</button>
+    </div>
+    <div class="pin-label">Webcams les plus proches</div>
+    <ul class="pin-cams">${list.map((x, i) => `<li><button type="button" data-i="${i}">
+      <span class="dot ${x.c.status ? x.c.status.cls : "old"}"></span>
+      <span class="pin-cam-name">${esc(x.c.nom)}</span><span class="pin-cam-d">${x.d.toFixed(1)} km</span></button></li>`).join("")}</ul>
+    <button type="button" class="btn pin-remove">Retirer le repère</button>`;
+  div.querySelectorAll(".pin-cams button").forEach(b => { b.onclick = () => goToCam(list[+b.dataset.i].c); });
+  div.querySelector(".pin-remove").onclick = removePin;
+  div.querySelector(".pin-copy").onclick = async ev => {
+    const btn = ev.currentTarget;
+    const text = `${dmm} (${dec})`;
+    try { await navigator.clipboard.writeText(text); btn.textContent = "Copié ✓"; }
+    catch (e) {
+      const r = document.createRange(); r.selectNodeContents(div.querySelector(".pin-coords"));
+      const s = getSelection(); s.removeAllRanges(); s.addRange(r); btn.textContent = "Sélectionné";
+    }
+    setTimeout(() => { btn.textContent = "Copier"; }, 1800);
+  };
+  L.DomEvent.disableClickPropagation(div);
   return div;
 }
 
@@ -430,7 +463,8 @@ function placePin(latlng, silent) {
       icon: L.divIcon({ className: "my-pin", html: '<div class="my-pin-body"></div>', iconSize: [30, 42], iconAnchor: [15, 42], popupAnchor: [0, -40] }),
       draggable: true, zIndexOffset: 2000, title: "Mon repère (glisser pour déplacer)",
     }).addTo(map);
-    myPin.bindPopup(pinPopup, { closeButton: true, autoPan: true });
+    myPin.bindPopup(pinPopup, { closeButton: true, autoPan: true, maxWidth: 280,
+      autoPanPaddingTopLeft: L.point(16, 140), autoPanPaddingBottomRight: L.point(16, 70) });
     myPin.on("dragend", () => { savePin(); if (myPin.isPopupOpen()) myPin.setPopupContent(pinPopup); });
   }
   savePin();
