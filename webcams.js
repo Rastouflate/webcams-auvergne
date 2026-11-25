@@ -8,6 +8,7 @@
 //   player  : URL d'un lecteur vidéo intégrable (optionnel)
 //   site    : page d'origine
 //   youtube : identifiant de vidéo YouTube en direct (optionnel)
+//   orientation : direction de la vue (N, NE, E, SE, S, SO, O, NO), seulement si la source l'indique
 
 const VE = "https://s1.vision-environnement.com/live/modules/timelapse/";
 const VEP = "https://www.vision-environnement.com/live/player/";
@@ -28,11 +29,11 @@ window.WEBCAMS_TOURISME = [
 
   // --- Webcams référencées sur Windy (heure de mise à jour fiable) ---
   { nom: "Gorges de la Truyère", lieu: "Lacroix-Barrez", lat: 44.74, lon: 2.63,
-    image: WINDY(1793919143), corsGet: true, site: "https://www.windy.com/webcams/1793919143" },
+    image: WINDY(1793919143), corsGet: true, orientation: "E", site: "https://www.windy.com/webcams/1793919143" },
   { nom: "Laguiole – Station de ski", lieu: "Laguiole", lat: 44.67, lon: 2.93,
     image: WINDY(1608810000), corsGet: true, site: "https://www.windy.com/webcams/1608810000" },
   { nom: "Ussel – Aérodrome de Thalamy", lieu: "Saint-Exupéry-les-Roches", lat: 45.54, lon: 2.42,
-    image: WINDY(1603703110), corsGet: true, site: "https://www.windy.com/webcams/1603703110" },
+    image: WINDY(1603703110), corsGet: true, orientation: "SE", site: "https://www.windy.com/webcams/1603703110" },
   { nom: "Col de Guéry", lieu: "Orcival", lat: 45.62, lon: 2.82,
     image: WINDY(1449163850), corsGet: true, site: "https://www.windy.com/webcams/1449163850" },
 

@@ -30,6 +30,13 @@
     </div>
   </header>
 
+  <div class="search" id="search">
+    <svg class="search-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 4a6 6 0 1 0 3.87 10.59l4.77 4.77 1.41-1.41-4.77-4.77A6 6 0 0 0 10 4Zm0 2a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z"/></svg>
+    <input id="search-input" type="search" placeholder="Rechercher un village ou une webcam" autocomplete="off" aria-label="Rechercher un village ou une webcam">
+    <button id="search-clear" class="search-clear" aria-label="Effacer" hidden>×</button>
+    <ul id="search-results" class="search-results" role="listbox" hidden></ul>
+  </div>
+
   <div class="legend" id="legend">
     <span><i class="dot live"></i>En direct</span>
     <span><i class="dot recent"></i>Récente</span>
@@ -48,6 +55,7 @@
       <div class="status" id="status"></div>
       <h2 id="p-title"></h2>
       <p class="place" id="p-place"></p>
+      <p class="orient" id="p-orient"></p>
       <div class="buttons">
         <button id="btn-live" class="btn primary" hidden>▶ Voir le direct</button>
         <a id="btn-site" class="btn" target="_blank" rel="noopener">Ouvrir le site ↗</a>

@@ -265,6 +265,7 @@ function openPanel(cam) {
   current = cam;
   document.getElementById("p-title").textContent = cam.nom;
   document.getElementById("p-place").textContent = cam.lieu;
+  document.getElementById("p-orient").innerHTML = orientationHtml(cam.orientation);
   document.getElementById("btn-site").href = cam.site;
   document.getElementById("p-source").textContent = "Source : " + cam.source;
   btnLive.hidden = !(cam.player || cam.youtube);
@@ -292,6 +293,111 @@ document.addEventListener("keydown", e => { if (e.key === "Escape") closePanel()
 let touchY = null;
 panel.addEventListener("touchstart", e => { if (e.target.closest(".panel-body") && panel.querySelector(".panel-body").scrollTop > 0) return; touchY = e.touches[0].clientY; }, { passive: true });
 panel.addEventListener("touchend", e => { if (touchY !== null && e.changedTouches[0].clientY - touchY > 80) closePanel(); touchY = null; });
+
+// ---- Orientation de la webcam --------------------------------------
+const ORIENTATIONS = {
+  N: ["le nord", 0], NE: ["le nord-est", 45], E: ["l'est", 90], SE: ["le sud-est", 135],
+  S: ["le sud", 180], SO: ["le sud-ouest", 225], O: ["l'ouest", 270], NO: ["le nord-ouest", 315],
+};
+function orientationHtml(code) {
+  const o = code && ORIENTATIONS[code.toUpperCase()];
+  if (!o) return `<span class="compass unknown"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/></svg></span>Orientation inconnue`;
+  return `<span class="compass"><svg viewBox="0 0 24 24" style="transform:rotate(${o[1]}deg)"><circle cx="12" cy="12" r="9"/><path d="M12 4l3.5 8h-7z"/></svg></span>Vue orientée vers ${o[0]}`;
+}
+
+// ---- Recherche (villages + webcams) --------------------------------
+const sInput = document.getElementById("search-input");
+const sList = document.getElementById("search-results");
+const sClear = document.getElementById("search-clear");
+let sTimer = null, sItems = [], sSeq = 0, placeMarker = null;
+const norm = s => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[-'’]/g, " ");
+const esc = s => s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+function renderResults() {
+  if (!sItems.length) {
+    sList.innerHTML = `<li class="empty">Aucun résultat</li>`;
+  } else {
+    sList.innerHTML = sItems.map((it, i) => `<li role="option" data-i="${i}" class="${i === 0 ? "active" : ""}">
+      <span class="r-ico ${it.type}"></span><span class="r-txt"><b>${esc(it.label)}</b><small>${esc(it.sub)}</small></span></li>`).join("");
+  }
+  sList.hidden = false;
+}
+
+async function runSearch(q) {
+  const seq = ++sSeq;
+  const nq = norm(q);
+  const cams = allCams.filter(c => norm(c.nom + " " + c.lieu).includes(nq)).slice(0, 5)
+    .map(c => ({ type: "cam", label: c.nom, sub: "Webcam · " + c.lieu, cam: c }));
+  sItems = cams; renderResults();
+  if (q.length < 2) return;
+  try {
+    const url = `https://data.geopf.fr/geocodage/search?q=${encodeURIComponent(q)}&type=municipality&autocomplete=1&limit=6&lat=45.35&lon=2.76`;
+    const data = await (await fetch(url)).json();
+    if (seq !== sSeq) return;
+    const places = data.features.map(f => ({
+      type: "place", label: f.properties.name,
+      sub: `${f.properties.postcode || ""} · ${(f.properties.context || "").split(",").slice(1).join(",").trim()}`,
+      lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0],
+    }));
+    sItems = [...places, ...cams];
+    renderResults();
+  } catch (e) { /* hors ligne : on garde les webcams */ }
+}
+
+function pick(it) {
+  sList.hidden = true;
+  sInput.value = it.label;
+  sClear.hidden = false;
+  sInput.blur();
+  if (it.type === "cam") {
+    map.flyTo([it.cam.lat, it.cam.lon], 15);
+    map.once("moveend", () => openPanel(it.cam));
+    return;
+  }
+  closePanel();
+  if (placeMarker) placeMarker.remove();
+  placeMarker = L.marker([it.lat, it.lon], {
+    icon: L.divIcon({ className: "place-marker", html: `<div class="place-pin">${esc(it.label)}</div>`, iconSize: [0, 0] }),
+    zIndexOffset: -900, interactive: false,
+  }).addTo(map);
+  map.flyTo([it.lat, it.lon], 13);
+  const near = allCams.map(c => ({ c, d: haversineKm([it.lat, it.lon], [c.lat, c.lon]) })).sort((a, b) => a.d - b.d)[0];
+  if (near) toast(near.d <= 1 ? `Webcam sur place : ${near.c.nom}` : `Webcam la plus proche : ${near.c.nom} (${near.d.toFixed(1)} km)`);
+}
+
+sInput.addEventListener("input", () => {
+  const q = sInput.value.trim();
+  sClear.hidden = !q;
+  clearTimeout(sTimer);
+  if (!q) { sList.hidden = true; return; }
+  sTimer = setTimeout(() => runSearch(q), 250);
+});
+sInput.addEventListener("keydown", e => {
+  const lis = [...sList.querySelectorAll("li[data-i]")];
+  let a = lis.findIndex(li => li.classList.contains("active"));
+  if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+    e.preventDefault();
+    if (!lis.length) return;
+    a = (a + (e.key === "ArrowDown" ? 1 : -1) + lis.length) % lis.length;
+    lis.forEach((li, i) => li.classList.toggle("active", i === a));
+  } else if (e.key === "Enter") {
+    e.preventDefault();
+    if (sItems[a >= 0 ? a : 0]) pick(sItems[a >= 0 ? a : 0]);
+  } else if (e.key === "Escape") {
+    sList.hidden = true;
+  }
+});
+sList.addEventListener("click", e => {
+  const li = e.target.closest("li[data-i]");
+  if (li) pick(sItems[+li.dataset.i]);
+});
+sClear.onclick = () => {
+  sInput.value = ""; sClear.hidden = true; sList.hidden = true;
+  if (placeMarker) { placeMarker.remove(); placeMarker = null; }
+  sInput.focus();
+};
+document.addEventListener("click", e => { if (!e.target.closest("#search")) sList.hidden = true; });
+L.DomEvent.disableClickPropagation(document.getElementById("search"));
 
 // ---- Ma position ---------------------------------------------------
 let meMarker = null, allCams = [];

@@ -44,6 +44,57 @@ html, body { margin: 0; height: 100%; background: #dfe6e1; color: var(--fg);
 .icon-btn svg { width: 22px; height: 22px; fill: var(--fg); }
 .icon-btn.on svg { fill: var(--unknown); }
 
+/* ---------- Recherche ---------- */
+.search {
+  position: fixed; z-index: 1050; top: calc(max(12px, env(safe-area-inset-top)) + 56px); left: 12px;
+  width: min(420px, calc(100% - 24px));
+}
+.search input {
+  width: 100%; height: 44px; border: 0; border-radius: 999px; padding: 0 40px 0 42px;
+  background: var(--bg); color: var(--fg); box-shadow: var(--shadow); font: inherit; font-size: 15px;
+  -webkit-appearance: none; appearance: none;
+}
+.search input::-webkit-search-cancel-button { display: none; }
+.search input:focus { outline: 2px solid var(--unknown); outline-offset: 0; }
+.search-ico { position: absolute; left: 14px; top: 11px; width: 22px; height: 22px; fill: var(--muted); pointer-events: none; }
+.search-clear {
+  position: absolute; right: 8px; top: 7px; width: 30px; height: 30px; border-radius: 50%; border: 0;
+  background: var(--line); color: var(--fg); font-size: 18px; line-height: 1; cursor: pointer;
+}
+.search-results {
+  list-style: none; margin: 6px 0 0; padding: 6px; background: var(--bg); color: var(--fg); border-radius: 14px;
+  box-shadow: var(--shadow); max-height: 50vh; overflow-y: auto;
+}
+.search-results li { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px; cursor: pointer; }
+.search-results li.active, .search-results li:hover { background: var(--line); }
+.search-results li.empty { color: var(--muted); cursor: default; }
+.r-txt { display: flex; flex-direction: column; min-width: 0; }
+.r-txt b { font-size: 14px; font-weight: 600; }
+.r-txt small { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.r-ico { flex: none; width: 26px; height: 26px; border-radius: 50%; background: var(--accent) center / 14px no-repeat; }
+.r-ico.place { background-color: #c2410c; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpath d='M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5Z'/%3E%3C/svg%3E"); }
+.r-ico.cam { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpath d='M17 10.5V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3.5l4 4v-11l-4 4Z'/%3E%3C/svg%3E"); }
+.leaflet-top.leaflet-left { top: 124px !important; }
+
+/* Lieu recherché */
+.place-marker { background: none; border: 0; }
+.place-pin {
+  position: absolute; transform: translate(-50%, -100%); white-space: nowrap; margin-top: -6px;
+  background: var(--bg); color: var(--fg); font-weight: 600; font-size: 13px; padding: 4px 10px;
+  border-radius: 8px; border: 2px solid #c2410c; box-shadow: 0 2px 8px rgba(0, 0, 0, .3);
+}
+.place-pin::after {
+  content: ""; position: absolute; left: 50%; top: 100%; width: 12px; height: 12px; border-radius: 50%;
+  background: #c2410c; border: 2px solid #fff; transform: translate(-50%, 6px);
+}
+
+/* Orientation */
+.orient { display: flex; align-items: center; gap: 8px; margin: 8px 0 0; font-size: 13px; color: var(--muted); }
+.compass svg { width: 22px; height: 22px; display: block; }
+.compass circle { fill: none; stroke: var(--muted); stroke-width: 1.5; }
+.compass path { fill: #c2410c; }
+.compass.unknown circle { stroke-dasharray: 3 3; }
+
 /* ---------- Légende ---------- */
 .legend {
   position: fixed; z-index: 900; left: 12px; bottom: max(12px, env(safe-area-inset-bottom));
@@ -148,7 +199,7 @@ html, body { margin: 0; height: 100%; background: #dfe6e1; color: var(--fg);
 
 /* ---------- Toast ---------- */
 .toast {
-  position: fixed; z-index: 1200; left: 50%; top: 76px; transform: translate(-50%, -20px); opacity: 0;
+  position: fixed; z-index: 1200; left: 50%; top: 128px; transform: translate(-50%, -20px); opacity: 0;
   background: var(--fg); color: var(--bg); padding: 10px 16px; border-radius: 12px; font-size: 14px;
   pointer-events: none; transition: all .25s; max-width: calc(100% - 32px); text-align: center;
 }
