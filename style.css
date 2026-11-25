@@ -152,6 +152,18 @@ html, body { margin: 0; height: 100%; background: #dfe6e1; color: var(--fg);
   border: 7px solid transparent; border-bottom: 0; border-top-color: #c2410c;
 }
 
+/* Repère personnel */
+.my-pin { background: none; border: 0; }
+.my-pin-body {
+  width: 30px; height: 30px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); margin-top: 2px;
+  background: #7c3aed; border: 3px solid #fff; box-shadow: 0 3px 10px rgba(0, 0, 0, .4); cursor: grab;
+}
+.my-pin-body::after { content: ""; position: absolute; inset: 7px; border-radius: 50%; background: #fff; }
+.pin-popup { font: 13px system-ui, sans-serif; min-width: 200px; }
+.pin-popup strong { font-size: 14px; }
+.pin-popup p { margin: 6px 0 10px; line-height: 1.4; }
+.pin-popup .btn { width: 100%; color: #17201b; border-color: rgba(0,0,0,.15); }
+
 /* Ma position */
 .me-dot { width: 18px; height: 18px; border-radius: 50%; background: var(--unknown); border: 3px solid #fff;
   box-shadow: 0 0 0 6px rgba(47, 127, 216, .25); }

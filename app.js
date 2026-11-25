@@ -399,6 +399,89 @@ sClear.onclick = () => {
 document.addEventListener("click", e => { if (!e.target.closest("#search")) sList.hidden = true; });
 L.DomEvent.disableClickPropagation(document.getElementById("search"));
 
+// ---- Repère personnel (appui long) ---------------------------------
+// Appui long sur téléphone, clic long ou clic droit sur ordinateur.
+// Le repère reste en place (et après rechargement de la page) jusqu'à ce qu'on le retire.
+let myPin = null;
+const PIN_KEY = "webcams-auvergne-repere";
+
+function nearestText(latlng) {
+  const list = allCams.map(c => ({ c, d: haversineKm([latlng.lat, latlng.lng], [c.lat, c.lon]) }))
+    .sort((a, b) => a.d - b.d);
+  const n10 = list.filter(x => x.d <= 10).length;
+  const near = list[0];
+  if (!near) return "";
+  return `Webcam la plus proche : <b>${esc(near.c.nom)}</b> (${near.d.toFixed(1)} km)<br>${n10} webcam${n10 > 1 ? "s" : ""} à moins de 10 km`;
+}
+
+function pinPopup() {
+  const div = document.createElement("div");
+  div.className = "pin-popup";
+  div.innerHTML = `<strong>Mon repère</strong><p>${nearestText(myPin.getLatLng())}</p>
+    <button type="button" class="btn">Retirer le repère</button>`;
+  div.querySelector("button").onclick = removePin;
+  return div;
+}
+
+function placePin(latlng, silent) {
+  if (myPin) myPin.setLatLng(latlng);
+  else {
+    myPin = L.marker(latlng, {
+      icon: L.divIcon({ className: "my-pin", html: '<div class="my-pin-body"></div>', iconSize: [30, 42], iconAnchor: [15, 42], popupAnchor: [0, -40] }),
+      draggable: true, zIndexOffset: 2000, title: "Mon repère (glisser pour déplacer)",
+    }).addTo(map);
+    myPin.bindPopup(pinPopup, { closeButton: true, autoPan: true });
+    myPin.on("dragend", () => { savePin(); if (myPin.isPopupOpen()) myPin.setPopupContent(pinPopup); });
+  }
+  savePin();
+  if (!silent) {
+    if (navigator.vibrate) try { navigator.vibrate(30); } catch (e) {}
+    toast("Repère placé · touchez-le pour voir les webcams proches ou le retirer");
+  }
+}
+function removePin() {
+  if (!myPin) return;
+  myPin.remove(); myPin = null;
+  try { localStorage.removeItem(PIN_KEY); } catch (e) {}
+  toast("Repère retiré");
+}
+function savePin() {
+  try { const p = myPin.getLatLng(); localStorage.setItem(PIN_KEY, JSON.stringify([p.lat, p.lng])); } catch (e) {}
+}
+function restorePin() {
+  try {
+    const v = JSON.parse(localStorage.getItem(PIN_KEY) || "null");
+    if (Array.isArray(v) && v.length === 2) placePin(L.latLng(v[0], v[1]), true);
+  } catch (e) {}
+}
+
+// Téléphone (appui long) et clic droit : Leaflet émet "contextmenu"
+map.on("contextmenu", e => {
+  if (e.originalEvent) L.DomEvent.preventDefault(e.originalEvent);
+  placePin(e.latlng);
+});
+
+// Ordinateur : clic maintenu ~0,6 s sans bouger
+(function longMousePress() {
+  const el = map.getContainer();
+  let timer = null, start = null, fired = false;
+  el.addEventListener("mousedown", ev => {
+    if (ev.button !== 0 || ev.target.closest(".leaflet-marker-icon, .leaflet-popup, .leaflet-control")) return;
+    start = [ev.clientX, ev.clientY]; fired = false;
+    timer = setTimeout(() => {
+      fired = true;
+      const r = el.getBoundingClientRect();
+      placePin(map.containerPointToLatLng([start[0] - r.left, start[1] - r.top]));
+    }, 600);
+  });
+  el.addEventListener("mousemove", ev => {
+    if (timer && start && Math.hypot(ev.clientX - start[0], ev.clientY - start[1]) > 6) { clearTimeout(timer); timer = null; }
+  });
+  el.addEventListener("mouseup", () => { clearTimeout(timer); timer = null; });
+  // Empêche le clic qui suit l'appui long de fermer quoi que ce soit
+  el.addEventListener("click", ev => { if (fired) { ev.stopPropagation(); fired = false; } }, true);
+})();
+
 // ---- Ma position ---------------------------------------------------
 let meMarker = null, allCams = [];
 document.getElementById("btn-locate").onclick = () => {
@@ -449,6 +532,7 @@ async function refreshStatuses() {
     cluster.addLayer(cam.marker);
   }
   map.fitBounds(cluster.getBounds(), { padding: [30, 30] });
+  restorePin();
   document.getElementById("count").textContent = `${allCams.length} webcams · vérification…`;
   // les marqueurs reprennent leur couleur quand le groupe s'ouvre
   cluster.on("animationend spiderfied", () => allCams.forEach(c => c.status && setStatusClass(c)));
