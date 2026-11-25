@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1f3b2d">
+<title>Webcams Auvergne</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="map" aria-label="Carte des webcams"></div>
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-dot"></span>
+      <div>
+        <h1>Webcams Auvergne</h1>
+        <p id="count">Chargement…</p>
+      </div>
+    </div>
+    <div class="actions">
+      <button id="btn-layer" class="icon-btn" title="Changer le fond de carte" aria-label="Changer le fond de carte">
+        <svg viewBox="0 0 24 24"><path d="M12 3 2 8l10 5 10-5-10-5Zm-8.3 8.9L2 12.8 12 18l10-5.2-1.7-.9L12 16.2l-8.3-4.3Zm0 4L2 16.8 12 22l10-5.2-1.7-.9L12 20.2l-8.3-4.3Z"/></svg>
+      </button>
+      <button id="btn-locate" class="icon-btn" title="Ma position" aria-label="Ma position">
+        <svg viewBox="0 0 24 24"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm9 3h-2.07A7 7 0 0 0 13 5.07V3h-2v2.07A7 7 0 0 0 5.07 11H3v2h2.07A7 7 0 0 0 11 18.93V21h2v-2.07A7 7 0 0 0 18.93 13H21v-2Zm-9 6a5 5 0 1 1 0-10 5 5 0 0 1 0 10Z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="legend" id="legend">
+    <span><i class="dot live"></i>En direct</span>
+    <span><i class="dot recent"></i>Récente</span>
+    <span><i class="dot old"></i>Ancienne</span>
+    <span><i class="dot offline"></i>Hors ligne</span>
+    <span><i class="dot unknown"></i>Heure inconnue</span>
+  </div>
+
+  <aside id="panel" class="panel" aria-hidden="true">
+    <div class="panel-grip"></div>
+    <button id="panel-close" class="panel-close" aria-label="Fermer">
+      <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+    <div class="media" id="media"></div>
+    <div class="panel-body">
+      <div class="status" id="status"></div>
+      <h2 id="p-title"></h2>
+      <p class="place" id="p-place"></p>
+      <div class="buttons">
+        <button id="btn-live" class="btn primary" hidden>▶ Voir le direct</button>
+        <a id="btn-site" class="btn" target="_blank" rel="noopener">Ouvrir le site ↗</a>
+      </div>
+      <p class="source" id="p-source"></p>
+    </div>
+  </aside>
+
+  <div id="toast" class="toast" role="status"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+  <script src="webcams.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
